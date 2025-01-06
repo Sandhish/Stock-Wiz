@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '../../Services/authService';
+import styles from './Login.module.css';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
@@ -28,17 +29,19 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <h2>Login</h2>
-      {error && <div className="error">{error}</div>}
-      <form onSubmit={handleSubmit}>
-        <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleInputChange} required />
-        <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleInputChange} required />
-        <button type="submit">Login</button>
+    <div className={styles.loginContainer}>
+      <h2 className={styles.loginHeading}>Login</h2>
+      {error && <div className={styles.loginErr}>{error}</div>}
+      <form onSubmit={handleSubmit} className={styles.loginForm}>
+        <input type="email" name="email" placeholder="Email Address" className={styles.loginInput}
+        value={formData.email} onChange={handleInputChange} required />
+        <input type="password" name="password" placeholder="Password" className={styles.loginInput}
+        value={formData.password} onChange={handleInputChange} required />
+        <button type="submit" className={styles.loginBtn}>Login</button>
       </form>
 
-      <p>
-        Don't have an account? <a href="/signup">Sign up here</a>
+      <p className={styles.loginText}>
+        Don't have an account? <a href="/signup" className={styles.loginLink}>Sign up here</a>
       </p>
     </div>
   );
