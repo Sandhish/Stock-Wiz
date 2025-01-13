@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '../../Services/authService';
-import styles from './Login.module.css';
-import { LogIn, Mail, Lock } from 'lucide-react';
+import { signup } from '../../Services/authService';
+import styles from '../Login/Login.module.css';
+import { UserPlus, Mail, Lock, User } from 'lucide-react';
 
-const Login = () => {
-  const [formData, setFormData] = useState({ email: '', password: '' });
+const Signup = () => {
+  const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
@@ -20,11 +20,11 @@ const Login = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = await login(formData);
+      const data = await signup(formData);
       localStorage.setItem('token', data.token);
       navigate('/dashboard');
     } catch (error) {
-      setError(error.response?.data?.message || 'Invalid credentials');
+      setError(error.response?.data?.message || 'An error occurred');
     }
   };
 
@@ -34,12 +34,12 @@ const Login = () => {
         <div className={styles.gradientOverlay}></div>
         <div className={styles.gridPattern}></div>
       </div>
-      
+
       <div className={styles.authCard}>
         <div className={styles.authHeader}>
-          <LogIn className={styles.authIcon} size={28} />
-          <h2>Welcome Back</h2>
-          <p>Login to manage your crypto portfolio</p>
+          <UserPlus className={styles.authIcon} size={28} />
+          <h2>Create Account</h2>
+          <p>Join millions of crypto traders worldwide</p>
         </div>
 
         {error && (
@@ -49,6 +49,18 @@ const Login = () => {
         )}
 
         <form onSubmit={handleSubmit} className={styles.authForm}>
+          <div className={styles.inputGroup}>
+            <User className={styles.inputIcon} size={18} />
+            <input
+              type="text"
+              name="name"
+              placeholder="Full Name"
+              value={formData.name}
+              onChange={handleInputChange}
+              required
+            />
+          </div>
+
           <div className={styles.inputGroup}>
             <Mail className={styles.inputIcon} size={18} />
             <input
@@ -73,20 +85,16 @@ const Login = () => {
             />
           </div>
 
-          <div className={styles.forgotPassword}>
-            <a href="/forgot-password">Forgot Password?</a>
-          </div>
-
           <button type="submit" className={styles.authButton}>
-            Login to Account
+            Create Account
           </button>
         </form>
 
         <div className={styles.authFooter}>
           <p>
-            Don't have an account?{' '}
-            <a href="/signup" className={styles.authLink}>
-              Sign up
+            Already have an account?{' '}
+            <a href="/login" className={styles.authLink}>
+              Login
             </a>
           </p>
         </div>
@@ -95,4 +103,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;

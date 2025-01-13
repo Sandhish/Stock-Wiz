@@ -18,7 +18,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', require('./Routes/authRoutes'));
-app.use('/api/cryptos', require('./Routes/cryptoRoutes'));
 
 connectDB();
 startWebSocket(wss); 
@@ -27,7 +26,7 @@ app.get('/', (req, res) => {
     res.send('Crypto API is running...');
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 
 server.listen(PORT, () => {
     console.log(`Server is listening at http://localhost:${PORT}`);

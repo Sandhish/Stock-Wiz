@@ -1,89 +1,186 @@
 const WebSocket = require('ws');
-const Crypto = require('./Models/Crypto');
 
-const BINANCE_WS_URL = 'wss://stream.binance.com:9443/stream?streams=';
-const clients = new Set();
+class BinanceWebSocketManager {
+  constructor() {
+    this.BINANCE_WS_URL = 'wss://stream.binance.com:9443/stream?streams=';
+    this.clients = new Map();
+    this.binanceWs = null;
+    this.activeStreams = new Set();
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
+    this.reconnectTimeout = null;
+    this.isReconnecting = false;
+  }
 
-const trackCryptoPrices = (symbols, wss) => {
-    const streams = symbols.map((symbol) => `${symbol.toLowerCase()}@ticker`).join('/');
-    const wsUrl = `${BINANCE_WS_URL}${streams}`;
-    const ws = new WebSocket(wsUrl);
-
-    ws.on('open', () => {
-        console.log('Connected to Binance WebSocket');
-    });
-
-    ws.on('message', async (data) => {
-        try {
-            const parsedData = JSON.parse(data);
-            const { s: symbol, c: price } = parsedData.data;
-
-            const existingCrypto = await Crypto.findOne({ symbol });
-            const previousPrice = existingCrypto?.price || 0;
-            const updatedPrice = parseFloat(price);
-
-            const percentageChange = previousPrice ? 
-                ((updatedPrice - previousPrice) / previousPrice) * 100 : 0;
-
-            await Crypto.findOneAndUpdate(
-                { symbol },
-                {
-                    price: updatedPrice,
-                    $push: { 
-                        priceHistory: { 
-                            price: updatedPrice, 
-                            date: new Date() 
-                        } 
-                    },
-                    percentageChange: percentageChange.toFixed(2)
-                },
-                { upsert: true, new: true }
-            );
-
-            const update = JSON.stringify({
-                symbol,
-                price: updatedPrice,
-                percentageChange: percentageChange.toFixed(2)
-            });
-
-            clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(update);
-                }
-            });
-        } catch (error) {
-            console.error('WebSocket message error:', error);
-        }
-    });
-
-    ws.on('error', console.error);
-    ws.on('close', () => setTimeout(() => trackCryptoPrices(symbols, wss), 5000));
-};
-
-const startWebSocket = async (wss) => {
-    try {
-        const cryptos = await Crypto.find();
-        const symbols = cryptos.map(crypto => crypto.symbol);
-
-        if (!symbols.length) {
-            console.error('No symbols found in database');
-            return;
-        }
-
-        wss.on('connection', (ws) => {
-            clients.add(ws);
-            console.log('Client connected');
-
-            ws.on('close', () => {
-                clients.delete(ws);
-                console.log('Client disconnected');
-            });
-        });
-
-        trackCryptoPrices(symbols, wss);
-    } catch (error) {
-        console.error('StartWebSocket error:', error);
+  async updateBinanceConnection() {
+    if (this.isReconnecting) {
+      return;
     }
+
+    try {
+      if (this.reconnectTimeout) {
+        clearTimeout(this.reconnectTimeout);
+        this.reconnectTimeout = null;
+      }
+
+      if (this.binanceWs) {
+        this.binanceWs.terminate();
+        this.binanceWs = null;
+      }
+
+      const streams = Array.from(this.activeStreams).join('/');
+      if (!streams) {
+        return;
+      }
+
+      this.isReconnecting = true;
+      const wsUrl = `${this.BINANCE_WS_URL}${streams}`;
+      this.binanceWs = new WebSocket(wsUrl);
+
+      this.binanceWs.on('open', () => {
+        console.log('Connected to Binance WebSocket');
+        this.reconnectAttempts = 0;
+        this.isReconnecting = false;
+      });
+
+      this.binanceWs.on('message', (data) => {
+        this.handleMessage(data);
+      });
+
+      this.binanceWs.on('error', (error) => {
+        console.error('Binance WebSocket error:', error);
+        this.handleReconnect();
+      });
+
+      this.binanceWs.on('close', () => {
+        console.log('Binance WebSocket closed');
+        this.handleReconnect();
+      });
+
+    } catch (error) {
+      console.error('Error in updateBinanceConnection:', error);
+      this.handleReconnect();
+    }
+  }
+
+  handleMessage(data) {
+    try {
+      const parsedData = JSON.parse(data);
+      const {
+        s: symbol,
+        c: price,
+        P: priceChangePercent,
+        h: high24h,
+        l: low24h,
+        v: volume,
+        p: priceChange
+      } = parsedData.data;
+
+      this.clients.forEach((subscriptions, client) => {
+        if (client.readyState === WebSocket.OPEN && subscriptions.has(symbol)) {
+          client.send(JSON.stringify({
+            type: 'price_update',
+            symbol,
+            price: parseFloat(price),
+            percentageChange: parseFloat(priceChangePercent),
+            high: parseFloat(high24h),
+            low: parseFloat(low24h),
+            volume: parseFloat(volume),
+            priceChange: parseFloat(priceChange)
+          }));
+        }
+      });
+    } catch (error) {
+      console.error('Error processing WebSocket message:', error);
+    }
+  }
+
+  handleReconnect() {
+    if (this.isReconnecting || this.reconnectAttempts >= this.maxReconnectAttempts) {
+      return;
+    }
+
+    this.reconnectAttempts++;
+    console.log(`Reconnection attempt ${this.reconnectAttempts} of ${this.maxReconnectAttempts}`);
+
+    const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
+    
+    this.reconnectTimeout = setTimeout(() => {
+      this.isReconnecting = false;
+      this.updateBinanceConnection();
+    }, delay);
+  }
+
+  cleanup() {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+    }
+    if (this.binanceWs) {
+      this.binanceWs.terminate();
+    }
+    this.clients.clear();
+    this.activeStreams.clear();
+    this.isReconnecting = false;
+    this.reconnectAttempts = 0;
+  }
+}
+
+const startWebSocket = (wss) => {
+  const manager = new BinanceWebSocketManager();
+
+  wss.on('connection', (ws) => {
+    manager.clients.set(ws, new Set());
+    console.log('Client connected');
+
+    ws.on('message', (message) => {
+      try {
+        const data = JSON.parse(message);
+
+        if (data.type === 'subscribe' && data.symbol) {
+          const subscriptions = manager.clients.get(ws);
+          subscriptions.add(data.symbol);
+          manager.activeStreams.add(`${data.symbol.toLowerCase()}@ticker`);
+          manager.updateBinanceConnection();
+          console.log(`Client subscribed to ${data.symbol}`);
+        }
+
+        if (data.type === 'unsubscribe' && data.symbol) {
+          const subscriptions = manager.clients.get(ws);
+          subscriptions.delete(data.symbol);
+          manager.activeStreams.delete(`${data.symbol.toLowerCase()}@ticker`);
+          manager.updateBinanceConnection();
+          console.log(`Client unsubscribed from ${data.symbol}`);
+        }
+      } catch (error) {
+        console.error('Error processing client message:', error);
+      }
+    });
+
+    ws.on('close', () => {
+      const subscriptions = manager.clients.get(ws);
+      if (subscriptions) {
+        subscriptions.forEach((symbol) => {
+          manager.activeStreams.delete(`${symbol.toLowerCase()}@ticker`);
+        });
+        manager.clients.delete(ws);
+        manager.updateBinanceConnection();
+      }
+      console.log('Client disconnected');
+    });
+
+    ws.on('error', (error) => {
+      console.error('WebSocket client error:', error);
+      manager.clients.delete(ws);
+    });
+  });
+
+  process.on('SIGINT', () => {
+    manager.cleanup();
+    wss.clients.forEach((client) => client.close());
+    process.exit(0);
+  });
+
+  return manager;
 };
 
 module.exports = startWebSocket;
