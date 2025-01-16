@@ -22,7 +22,7 @@ const Signup = () => {
     try {
       const data = await signup(formData);
       localStorage.setItem('token', data.token);
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       setError(error.response?.data?.message || 'An error occurred');
     }
@@ -51,37 +51,22 @@ const Signup = () => {
         <form onSubmit={handleSubmit} className={styles.authForm}>
           <div className={styles.inputGroup}>
             <User className={styles.inputIcon} size={18} />
-            <input
-              type="text"
-              name="name"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={handleInputChange}
-              required
+            <input type="text" name="name" placeholder="Full Name"
+              value={formData.name} onChange={handleInputChange} required
             />
           </div>
 
           <div className={styles.inputGroup}>
             <Mail className={styles.inputIcon} size={18} />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email Address"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
+            <input type="email" name="email" placeholder="Email Address"
+              value={formData.email} onChange={handleInputChange} required
             />
           </div>
 
           <div className={styles.inputGroup}>
             <Lock className={styles.inputIcon} size={18} />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
+            <input type="password" name="password" placeholder="Password"
+              value={formData.password} onChange={handleInputChange} required
             />
           </div>
 
@@ -91,8 +76,7 @@ const Signup = () => {
         </form>
 
         <div className={styles.authFooter}>
-          <p>
-            Already have an account?{' '}
+          <p> Already have an account?{' '}
             <a href="/login" className={styles.authLink}>
               Login
             </a>

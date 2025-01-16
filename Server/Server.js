@@ -18,6 +18,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/auth', require('./Routes/authRoutes'));
+app.use('/api/portfolio', require('./Routes/portfolioRoutes'));
 
 connectDB();
 startWebSocket(wss); 

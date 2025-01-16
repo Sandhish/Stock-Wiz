@@ -22,7 +22,7 @@ const Login = () => {
     try {
       const data = await login(formData);
       localStorage.setItem('token', data.token);
-      navigate('/dashboard');
+      navigate('/');
     } catch (error) {
       setError(error.response?.data?.message || 'Invalid credentials');
     }
@@ -34,7 +34,7 @@ const Login = () => {
         <div className={styles.gradientOverlay}></div>
         <div className={styles.gridPattern}></div>
       </div>
-      
+
       <div className={styles.authCard}>
         <div className={styles.authHeader}>
           <LogIn className={styles.authIcon} size={28} />
@@ -51,25 +51,15 @@ const Login = () => {
         <form onSubmit={handleSubmit} className={styles.authForm}>
           <div className={styles.inputGroup}>
             <Mail className={styles.inputIcon} size={18} />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email Address"
-              value={formData.email}
-              onChange={handleInputChange}
-              required
+            <input type="email" name="email" placeholder="Email Address"
+              value={formData.email} onChange={handleInputChange} required
             />
           </div>
 
           <div className={styles.inputGroup}>
             <Lock className={styles.inputIcon} size={18} />
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleInputChange}
-              required
+            <input type="password" name="password" placeholder="Password"
+              value={formData.password} onChange={handleInputChange} required
             />
           </div>
 
@@ -83,8 +73,7 @@ const Login = () => {
         </form>
 
         <div className={styles.authFooter}>
-          <p>
-            Don't have an account?{' '}
+          <p> Don't have an account?{' '}
             <a href="/signup" className={styles.authLink}>
               Sign up
             </a>

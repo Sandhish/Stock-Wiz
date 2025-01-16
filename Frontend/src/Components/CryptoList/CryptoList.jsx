@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowUpIcon, ArrowDownIcon, SearchIcon } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, SearchIcon, CircleFadingPlus, CircleUserRound } from 'lucide-react';
 import axios from 'axios';
 import classNames from 'classnames';
 import styles from './CryptoList.module.css';
@@ -20,8 +20,8 @@ const CryptoList = () => {
   const [websocketConnected, setWebsocketConnected] = useState(false);
 
   const ITEMS_PER_PAGE = 30;
-  const API_KEY = 'ecb7d232-1db3-4128-9e40-e0d8ae6a6abf';
-  const WS_URL = 'ws://localhost:3001/ws';
+  const API_KEY = import.meta.env.VITE_API_KEY;
+  const WS_URL = 'ws://localhost:5000/ws';
 
   const cryptosRef = useRef(cryptos);
   useEffect(() => {
@@ -36,7 +36,7 @@ const CryptoList = () => {
     ws.current.onopen = () => {
       console.log('WebSocket Connected');
       setWebsocketConnected(true);
-      
+
       cryptosRef.current.forEach(crypto => {
         ws.current.send(JSON.stringify({
           type: 'subscribe',
@@ -48,15 +48,15 @@ const CryptoList = () => {
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'price_update') {
-        setCryptos(prevCryptos => 
-          prevCryptos.map(crypto => 
-            crypto.symbol === data.symbol.replace('USDT', '') 
+        setCryptos(prevCryptos =>
+          prevCryptos.map(crypto =>
+            crypto.symbol === data.symbol.replace('USDT', '')
               ? {
-                  ...crypto,
-                  price: data.price,
-                  percentageChange: data.percentageChange,
-                  volume: data.volume
-                }
+                ...crypto,
+                price: data.price,
+                percentageChange: data.percentageChange,
+                volume: data.volume
+              }
               : crypto
           )
         );
@@ -125,9 +125,9 @@ const CryptoList = () => {
       }));
 
       formattedData.sort((a, b) => a.rank - b.rank);
-      
+
       setCryptos(formattedData);
-      
+
       if (websocketConnected && ws.current?.readyState === WebSocket.OPEN) {
         formattedData.forEach(crypto => {
           ws.current.send(JSON.stringify({
@@ -151,12 +151,15 @@ const CryptoList = () => {
       return;
     }
 
-    const localResults = cryptos.filter(crypto => 
+    const localResults = cryptos.filter(crypto =>
       crypto.name.toLowerCase().includes(query.toLowerCase()) ||
       crypto.symbol.toLowerCase().includes(query.toLowerCase())
-    ).slice(0, 10);
-    
-    setSearchResults(localResults);
+    );
+
+    if (query.trim().length < 2) {
+      setSearchResults(localResults.slice(0, 10));
+      return;
+    }
 
     try {
       const response = await axios.post('https://api.livecoinwatch.com/coins/list', {
@@ -185,19 +188,55 @@ const CryptoList = () => {
         iconUrl: `https://lcw.nyc3.cdn.digitaloceanspaces.com/production/currencies/64/${crypto.code.toLowerCase()}.png`
       }));
 
-      setSearchResults(apiResults);
+      const combinedResults = [...apiResults];
+      localResults.forEach(localResult => {
+        if (!combinedResults.some(r => r.symbol === localResult.symbol)) {
+          combinedResults.push(localResult);
+        }
+      });
+
+      const sortedResults = combinedResults.sort((a, b) => {
+        const aNameMatch = a.name.toLowerCase().startsWith(query.toLowerCase());
+        const bNameMatch = b.name.toLowerCase().startsWith(query.toLowerCase());
+        const aSymbolMatch = a.symbol.toLowerCase().startsWith(query.toLowerCase());
+        const bSymbolMatch = b.symbol.toLowerCase().startsWith(query.toLowerCase());
+
+        if (aSymbolMatch && !bSymbolMatch) return -1;
+        if (!aSymbolMatch && bSymbolMatch) return 1;
+        if (aNameMatch && !bNameMatch) return -1;
+        if (!aNameMatch && bNameMatch) return 1;
+        return 0;
+      });
+
+      setSearchResults(sortedResults.slice(0, 10));
     } catch (error) {
       console.error('Search error:', error);
+      setSearchResults(localResults.slice(0, 10));
     }
-  }, [cryptos]);
+  }, [cryptos, API_KEY]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       handleSearch(searchQuery);
     }, 300);
 
+    if (!searchQuery) {
+      setSearchResults([]);
+    }
+
     return () => clearTimeout(timeoutId);
   }, [searchQuery, handleSearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest(`.${styles.searchBarContainer}`)) {
+        setSearchResults([]);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     sessionStorage.setItem('cryptoListPage', page.toString());
@@ -257,38 +296,46 @@ const CryptoList = () => {
       {!error && (
         <>
           <div className={styles.headerContainer}>
-            <h2 className={styles.cryptoListHeading}>Live Crypto Prices</h2>
-            <div className={styles.searchBarContainer}>
-              <input 
-                type="text" 
-                placeholder="Search by name or symbol..." 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)} 
-                className={styles.searchBar} 
-              />
-              <SearchIcon className={styles.searchIcon} size={20} />
-              {searchResults.length > 0 && (
-                <div className={styles.searchResults}>
-                  {searchResults.map((crypto) => (
-                    <div 
-                      key={crypto.id} 
-                      className={styles.searchResultItem} 
-                      onClick={() => handleRowClick(crypto.symbol)}
-                    >
-                      <img 
-                        src={crypto.iconUrl} 
-                        alt={crypto.symbol} 
-                        className={styles.searchResultIcon}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/fallback-crypto-icon.png';
+            <h2 className={styles.cryptoListHeading}>Crypto Wiz</h2>
+            <div className={styles.searchBarWrapper}>
+              <div className={styles.searchBarContainer}>
+                <input type="text" placeholder="Search by name or symbol..." value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)} className={styles.searchBar}
+                  onFocus={() => {
+                    if (searchQuery) {
+                      handleSearch(searchQuery);
+                    }
+                  }}
+                />
+                <SearchIcon className={styles.searchIcon} size={20} />
+                {searchResults.length > 0 && searchQuery && (
+                  <div className={styles.searchResults}>
+                    {searchResults.map((crypto) => (
+                      <div key={crypto.id} className={styles.searchResultItem}
+                        onClick={() => {
+                          handleRowClick(crypto.symbol);
+                          setSearchQuery('');
+                          setSearchResults([]);
                         }}
-                      />
-                      <span>{crypto.name} ({crypto.symbol})</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                      >
+                        <img src={crypto.iconUrl} alt={crypto.symbol} className={styles.searchResultIcon}
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = '/fallback-crypto-icon.png';
+                          }}
+                        />
+                        <span>
+                          {crypto.name} ({crypto.symbol})
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.iconContainer} title='Account'>
+                <CircleUserRound size={38} className={styles.profileIcon} onClick={() => navigate('/account')} />
+              </div>
             </div>
           </div>
 
@@ -305,16 +352,9 @@ const CryptoList = () => {
               </thead>
               <tbody>
                 {cryptos.map((crypto) => (
-                  <tr 
-                    key={`${crypto.symbol}-${crypto.id}`} 
-                    className={styles.cryptoRow} 
-                    onClick={() => handleRowClick(crypto.symbol)}
-                  >
+                  <tr key={`${crypto.symbol}-${crypto.id}`} className={styles.cryptoRow} onClick={() => handleRowClick(crypto.symbol)} >
                     <td className={styles.assetCell}>
-                      <img 
-                        src={crypto.iconUrl} 
-                        alt={crypto.symbol} 
-                        className={styles.cryptoIcon}
+                      <img src={crypto.iconUrl} alt={crypto.symbol} className={styles.cryptoIcon}
                         onError={(e) => {
                           e.target.onerror = null;
                           e.target.src = '/fallback-crypto-icon.png';
@@ -349,21 +389,13 @@ const CryptoList = () => {
             </table>
           </div>
           <div className={styles.pagination}>
-            <button
-              className={styles.pageButton}
-              onClick={handlePreviousPage}
-              disabled={page === 1 || loading}
-            >
+            <button className={styles.pageButton} onClick={handlePreviousPage} disabled={page === 1 || loading} >
               Previous
             </button>
             <span className={styles.pageInfo}>
               Page {page} of {totalPages}
             </span>
-            <button
-              className={styles.pageButton}
-              onClick={handleNextPage}
-              disabled={page === totalPages || loading}
-            >
+            <button className={styles.pageButton} onClick={handleNextPage} disabled={page === totalPages || loading} >
               Next
             </button>
           </div>

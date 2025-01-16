@@ -1,0 +1,348 @@
+.tradingForm {
+  background-color: #1a202c;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 700px;
+  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.formHeader h3 {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.orderTypeContainer {
+  background-color: #2d3748;
+  padding: 3px;
+  border-radius: 8px;
+}
+
+.orderTypeButtons {
+  display: flex;
+  gap: 3px;
+}
+
+.orderTypeButton {
+  padding: 6px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  color: #a0aec0;
+}
+
+.orderTypeButton:hover {
+  color: #ffffff;
+}
+
+.buyActive {
+  background-color: #48bb78;
+  color: #ffffff;
+}
+
+.sellActive {
+  background-color: #f56565;
+  color: #ffffff;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sideBySideContainer {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.inputContainer {
+  background-color: #2d3748;
+  border-radius: 8px;
+  padding: 12px;
+  border: 2px solid #4a5568;
+  transition: all 0.2s ease;
+  flex: 1;
+}
+
+.inputContainer.focused {
+  border-color: #4299e1;
+}
+
+.inputContainer label {
+  display: block;
+  color: #a0aec0;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inputWrapper input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 4px 0;
+  width: 100%;
+}
+
+.inputWrapper input:focus {
+  outline: none;
+}
+
+.inputWrapper input::placeholder {
+  color: #4a5568;
+}
+
+.symbolLabel {
+  color: #a0aec0;
+  font-size: 14px;
+  font-weight: 600;
+  min-width: 45px;
+  text-align: right;
+}
+
+.totalPreview,
+.pricePreview {
+  background-color: #2d3748;
+  border-radius: 8px;
+  padding: 12px;
+  border: 2px solid #4a5568;
+  transition: all 0.2s ease;
+  flex: 0.5;
+  min-width: 150px;
+}
+
+.totalPreview label,
+.pricePreview label {
+  color: #a0aec0;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.totalPreview .previewValue,
+.pricePreview .previewValue {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.previewContainer {
+  background-color: #2d3748;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.previewRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.previewRow:not(:last-child) {
+  border-bottom: 1px solid #4a5568;
+  margin-bottom: 6px;
+}
+
+.previewLabel {
+  color: #a0aec0;
+  font-size: 13px;
+}
+
+.previewValue {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.submitButton {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.buyButton {
+  background-color: #48bb78;
+  color: #ffffff;
+}
+
+.buyButton:hover {
+  background-color: #38a169;
+}
+
+.sellButton {
+  background-color: #f56565;
+  color: #ffffff;
+}
+
+.sellButton:hover {
+  background-color: #e53e3e;
+}
+
+.formContainer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.notificationOverlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.notification {
+  position: relative;
+  padding: 2rem;
+  border-radius: 1rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  animation: slideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 90%;
+  width: 400px;
+}
+
+.notification.buy {
+  background-color: rgba(16, 185, 129, 0.95);
+}
+
+.notification.sell {
+  background-color: rgba(239, 68, 68, 0.95);
+}
+
+.notification.error {
+  background-color: rgba(239, 68, 68, 0.95);
+}
+
+.notificationIcon {
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+.notification.buy .notificationIcon {
+  background-color: rgb(16, 185, 129);
+}
+
+.notification.sell .notificationIcon {
+  background-color: rgb(239, 68, 68);
+}
+
+.notificationTitle {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem;
+  text-align: center;
+}
+
+.notificationMessage {
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
+  font-size: 1rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: translateX(-50%) scale(0);
+  }
+
+  50% {
+    transform: translateX(-50%) scale(1.2);
+  }
+
+  100% {
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+@media (max-width: 1200px) {
+  .bottomContainer {
+    flex-direction: column;
+  }
+
+  .statisticsGrid {
+    width: 100%;
+  }
+
+  .tradingFormContainer {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .cryptoDetailContainer {
+    padding: 1rem;
+  }
+
+  .cryptoHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cryptoPriceContainer {
+    margin-top: 1rem;
+  }
+}

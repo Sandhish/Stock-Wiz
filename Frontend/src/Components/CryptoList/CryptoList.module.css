@@ -219,7 +219,6 @@
   background-color: #63b3ed;
 }
 
-/* Search Results Styles */
 .searchResults {
   position: absolute;
   top: 100%;
@@ -253,6 +252,28 @@
   border-radius: 50%;
 }
 
+.searchBarWrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.iconContainer {
+  margin-top: 4px;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.profileIcon {
+  cursor: pointer;
+  color: #a0aec0;
+  transition: color 0.3s ease;
+}
+
+.profileIcon:hover {
+  color: #ffffff;
+}
+
 @media (max-width: 768px) {
   .cryptoListContainer {
     padding: 1rem;
@@ -275,5 +296,13 @@
 
   .cryptoName {
     display: none;
+  }
+
+  .searchBarWrapper {
+    width: 100%;
+  }
+
+  .searchBarContainer {
+    flex-grow: 1;
   }
 }

@@ -2,6 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import PriceChart from '../Chart/PriceChart';
 import styles from './CryptoDetail.module.css';
+import TradingForm from '../TradingForm/TradingForm';
+import { Link } from 'react-router-dom';
+import { ArrowRightIcon } from 'lucide-react';
 
 const TimeFrames = {
   MIN_15: '15m',
@@ -186,27 +189,6 @@ const CryptoDetail = () => {
         </div>
       </div>
 
-      <div className={styles.statisticsGrid}>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>High</span>
-          <p className={styles.statValue}>${formatPrice(cryptoData.high)}</p>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Low</span>
-          <p className={styles.statValue}>${formatPrice(cryptoData.low)}</p>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>24h Change</span>
-          <p className={`${styles.statValue} ${cryptoData.percentageChange >= 0 ? styles.textGreen : styles.textRed}`}>
-            {cryptoData.percentageChange.toFixed(2)}%
-          </p>
-        </div>
-        <div className={styles.statCard}>
-          <span className={styles.statLabel}>Volume</span>
-          <p className={styles.statValue}>${cryptoData.volume.toLocaleString()}</p>
-        </div>
-      </div>
-
       <div className={styles.timeframeButtons}>
         {Object.entries(TimeFrames).map(([key, value]) => (
           <button key={key} onClick={() => setTimeframe(value)}
@@ -217,6 +199,34 @@ const CryptoDetail = () => {
       </div>
 
       <PriceChart className={styles.chartContainer} priceHistory={priceHistory} timeframe={timeframe} symbol={symbol} />
+
+      <div className={styles.bottomContainer}>
+        <div className={styles.statisticsGrid}>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>High</span>
+            <p className={styles.statValue}>${formatPrice(cryptoData.high)}</p>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Low</span>
+            <p className={styles.statValue}>${formatPrice(cryptoData.low)}</p>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>24h Change</span>
+            <p className={`${styles.statValue} ${cryptoData.percentageChange >= 0 ? styles.textGreen : styles.textRed}`}>
+              {cryptoData.percentageChange.toFixed(2)}%
+            </p>
+          </div>
+          <div className={styles.statCard}>
+            <span className={styles.statLabel}>Volume</span>
+            <p className={styles.statValue}>${cryptoData.volume.toLocaleString()}</p>
+          </div>
+        </div>
+
+        <div className={styles.tradingFormContainer}>
+          <TradingForm symbol={symbol} currentPrice={cryptoData.price} />
+        </div>
+      </div>
+      <Link to="/portfolio" className={styles.portfolioLink}>Go to Portfolio<ArrowRightIcon/></Link>
     </div>
   );
 };
