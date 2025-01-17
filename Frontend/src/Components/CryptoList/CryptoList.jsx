@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowUpIcon, ArrowDownIcon, SearchIcon, CircleFadingPlus, CircleUserRound } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, SearchIcon, CircleUserRound } from 'lucide-react';
 import axios from 'axios';
 import classNames from 'classnames';
 import styles from './CryptoList.module.css';
 import { useNavigate } from 'react-router-dom';
+import Sidebar from '../SideBar/SideBar';
 
 const CryptoList = () => {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ const CryptoList = () => {
   const [error, setError] = useState(null);
   const [totalCoins, setTotalCoins] = useState(0);
   const [websocketConnected, setWebsocketConnected] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const ITEMS_PER_PAGE = 30;
   const API_KEY = import.meta.env.VITE_API_KEY;
@@ -239,7 +241,9 @@ const CryptoList = () => {
   }, []);
 
   useEffect(() => {
-    sessionStorage.setItem('cryptoListPage', page.toString());
+    if (page !== 1) {
+      sessionStorage.setItem('cryptoListPage', page.toString());
+    }
   }, [page]);
 
   useEffect(() => {
@@ -260,15 +264,12 @@ const CryptoList = () => {
   };
 
   const handleNextPage = () => {
-    const maxPages = Math.ceil(totalCoins / ITEMS_PER_PAGE);
-    if (page < maxPages) {
-      setPage(page + 1);
-    }
+    setPage((prevPage) => prevPage + 1);
   };
 
   const handlePreviousPage = () => {
     if (page > 1) {
-      setPage(page - 1);
+      setPage((prevPage) => prevPage - 1);
     }
   };
 
@@ -334,7 +335,7 @@ const CryptoList = () => {
               </div>
 
               <div className={styles.iconContainer} title='Account'>
-                <CircleUserRound size={38} className={styles.profileIcon} onClick={() => navigate('/account')} />
+                <CircleUserRound size={38} className={styles.profileIcon} onClick={() => setIsSidebarOpen(true)} />
               </div>
             </div>
           </div>
@@ -401,6 +402,8 @@ const CryptoList = () => {
           </div>
         </>
       )}
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)}
+      />
     </div>
   );
 };

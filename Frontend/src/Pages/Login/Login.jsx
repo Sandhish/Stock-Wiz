@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { login } from '../../Services/authService';
 import styles from './Login.module.css';
 import { LogIn, Mail, Lock } from 'lucide-react';
+import { useAuth } from '../../Context/AuthContext';
 
 const Login = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login: setAuthUser } = useAuth(); 
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -21,12 +23,14 @@ const Login = () => {
     e.preventDefault();
     try {
       const data = await login(formData);
-      localStorage.setItem('token', data.token);
-      navigate('/');
+      setAuthUser(data.token);
+      navigate('/user');
     } catch (error) {
+      console.error('Error during login:', error);
       setError(error.response?.data?.message || 'Invalid credentials');
     }
   };
+
 
   return (
     <div className={styles.authContainer}>

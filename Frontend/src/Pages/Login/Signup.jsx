@@ -22,7 +22,7 @@ const Signup = () => {
     try {
       const data = await signup(formData);
       localStorage.setItem('token', data.token);
-      navigate('/');
+      navigate('/user');
     } catch (error) {
       setError(error.response?.data?.message || 'An error occurred');
     }

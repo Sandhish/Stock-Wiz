@@ -7,23 +7,19 @@ import CryptoDetail from './Components/CryptoDetail/CryptoDetail';
 import Signup from './Pages/Login/Signup';
 import Portfolio from './Pages/Portfolio/Portfolio';
 import DepositFunds from './Components/AddingFund/AddingFund';
-
+import HomePage from './Pages/HomePage/HomePage';
 
 const App = () => {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<HomePage />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/login" element={<Login />} />
 
-          <Route path="/portfolio" element={
-            <ProtectedRoute>
-              <Portfolio />
-            </ProtectedRoute>
-          } />
 
-          <Route path="/" element={
+          <Route path="/user" element={
             <ProtectedRoute>
               <UserPage />
             </ProtectedRoute>
@@ -32,6 +28,12 @@ const App = () => {
           <Route path="/crypto/:symbol" element={
             <ProtectedRoute>
               <CryptoDetail />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/portfolio" element={
+            <ProtectedRoute>
+              <Portfolio />
             </ProtectedRoute>
           } />
 

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CreditCard, Wallet, ArrowRight, Check } from 'lucide-react';
+import { CreditCard, Wallet, ArrowRight, Check, X } from 'lucide-react';
 import styles from './AddingFund.module.css';
 
 const DepositFunds = ({ onUpdateBalance = () => { }, currentBalance = 0 }) => {
@@ -62,6 +62,9 @@ const DepositFunds = ({ onUpdateBalance = () => { }, currentBalance = 0 }) => {
             <div className={styles.depositCard}>
                 <div className={styles.cardHeader}>
                     <h2>Add Funds</h2>
+                    <button className={styles.closeButton} onClick={() => setShowSuccess(false)} aria-label="Close" >
+                        <X className={styles.icon} />
+                    </button>
                 </div>
                 <div className={styles.cardContent}>
                     {error && (
@@ -79,7 +82,8 @@ const DepositFunds = ({ onUpdateBalance = () => { }, currentBalance = 0 }) => {
 
                             <div className={styles.presetAmounts}>
                                 {presetAmounts.map((preset) => (
-                                    <button key={preset} onClick={() => setAmount(preset.toString())} className={styles.presetButton} >
+                                    <button key={preset} onClick={() => setAmount(preset.toString())}
+                                        className={styles.presetButton} >
                                         ${preset}
                                     </button>
                                 ))}
@@ -107,8 +111,7 @@ const DepositFunds = ({ onUpdateBalance = () => { }, currentBalance = 0 }) => {
                             </div>
 
                             <button onClick={handlePayment} disabled={!amount || loading}
-                                className={`${styles.paymentButton} ${loading ? styles.loading : ''}`}
-                            >
+                                className={`${styles.paymentButton} ${loading ? styles.loading : ''}`} >
                                 {loading ? (
                                     <div className={styles.spinner}></div>
                                 ) : (
