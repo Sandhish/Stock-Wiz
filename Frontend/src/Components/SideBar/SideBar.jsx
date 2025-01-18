@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Wallet, PlusCircle, LineChart, BookMarked, LogOut, User } from 'lucide-react';
-import styles from './Sidebar.module.css';
+import styles from './SideBar.module.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
