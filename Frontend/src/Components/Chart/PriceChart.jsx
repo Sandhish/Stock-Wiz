@@ -213,13 +213,11 @@ const PriceChart = ({ priceHistory = [], timeframe, symbol }) => {
             chart.canvas.parentNode.appendChild(tooltipEl);
           }
 
-          // Hide if no tooltip
           if (tooltip.opacity === 0) {
             tooltipEl.style.opacity = 0;
             return;
           }
 
-          // Set Text
           if (tooltip.body) {
             const titleLines = tooltip.title || [];
             const bodyLines = tooltip.body.map(b => b.lines);
@@ -269,19 +267,16 @@ const PriceChart = ({ priceHistory = [], timeframe, symbol }) => {
 
             const tableRoot = tooltipEl.querySelector('table');
 
-            // Remove old children
             while (tableRoot.firstChild) {
               tableRoot.firstChild.remove();
             }
 
-            // Add new children
             tableRoot.appendChild(tableHead);
             tableRoot.appendChild(tableBody);
           }
 
           const { offsetLeft: positionX, offsetTop: positionY } = chart.canvas;
 
-          // Display, position, and set styles for font
           tooltipEl.style.opacity = 1;
           tooltipEl.style.left = positionX + tooltip.caretX + 'px';
           tooltipEl.style.top = positionY + tooltip.caretY + 'px';

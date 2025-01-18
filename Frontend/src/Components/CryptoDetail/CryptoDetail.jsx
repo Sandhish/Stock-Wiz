@@ -42,6 +42,7 @@ const CryptoDetail = () => {
   const [error, setError] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
+  const WS_API_KEY = import.meta.env.VITE_WS_API;
 
   const fetchInitialData = useCallback(async () => {
     try {
@@ -113,7 +114,7 @@ const CryptoDetail = () => {
         return;
       }
 
-      ws = new WebSocket('ws://localhost:5000');
+      ws = new WebSocket(WS_API_KEY);
 
       ws.onopen = () => {
         console.log('WebSocket connected');

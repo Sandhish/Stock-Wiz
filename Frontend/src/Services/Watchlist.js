@@ -10,7 +10,7 @@ export const useWatchlist = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const API_URL = 'http://localhost:5000';
+  const API_URL = `${import.meta.env.VITE_BACKEND_API}`;
 
   const authAxios = axios.create({
     baseURL: API_URL,

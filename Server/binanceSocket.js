@@ -104,7 +104,7 @@ class BinanceWebSocketManager {
     console.log(`Reconnection attempt ${this.reconnectAttempts} of ${this.maxReconnectAttempts}`);
 
     const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 30000);
-    
+
     this.reconnectTimeout = setTimeout(() => {
       this.isReconnecting = false;
       this.updateBinanceConnection();
@@ -136,7 +136,7 @@ const startWebSocket = (wss) => {
       try {
         const data = JSON.parse(message);
 
-        if (data.type === 'subscribe' && data.symbol) {
+        if (data.type === 'subscribe' && typeof data.symbol === 'string') {
           const subscriptions = manager.clients.get(ws);
           subscriptions.add(data.symbol);
           manager.activeStreams.add(`${data.symbol.toLowerCase()}@ticker`);
@@ -144,7 +144,7 @@ const startWebSocket = (wss) => {
           console.log(`Client subscribed to ${data.symbol}`);
         }
 
-        if (data.type === 'unsubscribe' && data.symbol) {
+        if (data.type === 'unsubscribe' && typeof data.symbol === 'string') {
           const subscriptions = manager.clients.get(ws);
           subscriptions.delete(data.symbol);
           manager.activeStreams.delete(`${data.symbol.toLowerCase()}@ticker`);
@@ -160,7 +160,9 @@ const startWebSocket = (wss) => {
       const subscriptions = manager.clients.get(ws);
       if (subscriptions) {
         subscriptions.forEach((symbol) => {
-          manager.activeStreams.delete(`${symbol.toLowerCase()}@ticker`);
+          if (typeof symbol === 'string') {
+            manager.activeStreams.delete(`${symbol.toLowerCase()}@ticker`);
+          }
         });
         manager.clients.delete(ws);
         manager.updateBinanceConnection();

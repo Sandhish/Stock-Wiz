@@ -23,7 +23,7 @@ const DepositFunds = ({ onUpdateBalance = () => { }, currentBalance = 0 }) => {
                 throw new Error('Please log in to add funds.');
             }
 
-            const response = await fetch('http://localhost:5000/api/portfolio/funds', {
+            const response = await fetch(`${import.meta.env.VITE_BACKEND_API}/api/portfolio/funds`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

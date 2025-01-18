@@ -10,10 +10,11 @@ const Watchlist = () => {
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     const [ws, setWs] = useState(null);
+    const WS_API_KEY = import.meta.env.VITE_WS_API;
 
     useEffect(() => {
         const setupWebSocket = () => {
-            const newWs = new WebSocket('ws://localhost:5000/ws');
+            const newWs = new WebSocket(WS_API_KEY);
 
             newWs.onopen = () => {
                 console.log('WebSocket Connected');

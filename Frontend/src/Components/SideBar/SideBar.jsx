@@ -18,7 +18,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         const fetchUserData = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const response = await axios.get('http://localhost:5000/api/user/me', {
+                const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/user/me`, {
                     headers: {
                         Authorization: `Bearer ${token}`
                     }

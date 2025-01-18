@@ -30,7 +30,7 @@ const TradingForm = ({ symbol, currentPrice }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/portfolio/${orderType}`, {
+      const response = await fetch(`${import.meta.env.VITE_BACKEND_API}/api/portfolio/${orderType}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -12,14 +12,17 @@ const Portfolio = () => {
   const [priceUpdates, setPriceUpdates] = useState({});
   const ws = useRef(null);
 
+  const BACKEND_API_KEY = import.meta.env.VITE_BACKEND_API;
+  const WS_API_KEY = import.meta.env.VITE_WS_API;
+
   useEffect(() => {
     const fetchPortfolioData = async () => {
       try {
         const [portfolioRes, historyRes] = await Promise.all([
-          fetch('http://localhost:5000/api/portfolio/portfolio', {
+          fetch(`${BACKEND_API_KEY}/api/portfolio/portfolio`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           }),
-          fetch('http://localhost:5000/api/portfolio/history', {
+          fetch(`${BACKEND_API_KEY}/api/portfolio/history`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
           }),
         ]);
@@ -41,16 +44,19 @@ const Portfolio = () => {
   }, []);
 
   useEffect(() => {
-    ws.current = new WebSocket('ws://localhost:5000');
+    ws.current = new WebSocket(WS_API_KEY);
 
     ws.current.onopen = () => {
+      console.log('WebSocket Connected');
       portfolio.forEach((holding) => {
-        ws.current.send(
-          JSON.stringify({
-            type: 'subscribe',
-            symbol: holding.stockSymbol,
-          })
-        );
+        if (ws.current.readyState === WebSocket.OPEN) {
+          ws.current.send(
+            JSON.stringify({
+              type: 'subscribe',
+              symbol: holding.stockSymbol,
+            })
+          );
+        }
       });
     };
 
@@ -67,15 +73,25 @@ const Portfolio = () => {
       }
     };
 
+    ws.current.onerror = (error) => {
+      console.error('WebSocket Error:', error);
+    };
+
+    ws.current.onclose = () => {
+      console.log('WebSocket Disconnected');
+    };
+
     return () => {
       if (ws.current) {
         portfolio.forEach((holding) => {
-          ws.current.send(
-            JSON.stringify({
-              type: 'unsubscribe',
-              symbol: holding.stockSymbol,
-            })
-          );
+          if (ws.current.readyState === WebSocket.OPEN) {
+            ws.current.send(
+              JSON.stringify({
+                type: 'unsubscribe',
+                symbol: holding.stockSymbol,
+              })
+            );
+          }
         });
         ws.current.close();
       }
