@@ -38,7 +38,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     const handleLogout = () => {
         localStorage.removeItem('token');
         sessionStorage.removeItem('cryptoListPage');
-        navigate('/login');
+        navigate('/');
         onClose();
     };
 

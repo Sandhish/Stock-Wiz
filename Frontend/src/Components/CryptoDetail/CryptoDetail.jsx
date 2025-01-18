@@ -4,7 +4,8 @@ import PriceChart from '../Chart/PriceChart';
 import styles from './CryptoDetail.module.css';
 import TradingForm from '../TradingForm/TradingForm';
 import { Link } from 'react-router-dom';
-import { ArrowRightIcon } from 'lucide-react';
+import { ArrowRightIcon, Star, StarOff } from 'lucide-react';
+import { useWatchlist } from '../../Services/Watchlist';
 
 const TimeFrames = {
   MIN_15: '15m',
@@ -27,6 +28,7 @@ const formatPrice = (price) => {
 
 const CryptoDetail = () => {
   const { symbol } = useParams();
+  const baseSymbol = symbol.replace('USDT', '');
   const [cryptoData, setCryptoData] = useState({
     price: 0,
     percentageChange: 0,
@@ -39,6 +41,7 @@ const CryptoDetail = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [wsConnected, setWsConnected] = useState(false);
+  const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
 
   const fetchInitialData = useCallback(async () => {
     try {
@@ -172,13 +175,36 @@ const CryptoDetail = () => {
     };
   }, [symbol, timeframe, fetchHistoricalData, fetchInitialData]);
 
+  const handleWatchlistClick = async () => {
+    const isInWatchlist = Array.isArray(watchlist) && watchlist.some(item => item.symbol === baseSymbol);
+    if (isInWatchlist) {
+      await removeFromWatchlist(baseSymbol);
+    } else {
+      await addToWatchlist(baseSymbol);
+    }
+  };
+
+  const isInWatchlist = () => {
+    return Array.isArray(watchlist) && watchlist.some(item => item.symbol === baseSymbol);
+  };
+
   if (loading && !cryptoData.price) return <div className={styles.loading}>Loading...</div>;
   if (error) return <div className={styles.error}>Error: {error}</div>;
 
   return (
     <div className={styles.cryptoDetailContainer}>
       <div className={styles.cryptoHeader}>
-        <h2 className={styles.cryptoTitle}>{symbol}</h2>
+        <div className={styles.titleAndWatchlist}>
+          <h2 className={styles.cryptoTitle}>{baseSymbol}</h2>
+          <button className={styles.watchlistButton} onClick={handleWatchlistClick}
+            title={isInWatchlist() ? "Remove from watchlist" : "Add to watchlist"}>
+            {isInWatchlist() ? (
+              <Star className={styles.starIcon} />
+            ) : (
+              <StarOff className={styles.starIcon} />
+            )}
+          </button>
+        </div>
         <div className={styles.cryptoPriceContainer}>
           <span className={styles.cryptoPrice}>
             ${formatPrice(cryptoData.price)}
@@ -192,7 +218,7 @@ const CryptoDetail = () => {
       <div className={styles.timeframeButtons}>
         {Object.entries(TimeFrames).map(([key, value]) => (
           <button key={key} onClick={() => setTimeframe(value)}
-            className={`${styles.timeframeButton} ${timeframe === value ? styles.active : ''}`} >
+            className={`${styles.timeframeButton} ${timeframe === value ? styles.active : ''}`}>
             {value}
           </button>
         ))}
@@ -226,7 +252,7 @@ const CryptoDetail = () => {
           <TradingForm symbol={symbol} currentPrice={cryptoData.price} />
         </div>
       </div>
-      <Link to="/portfolio" className={styles.portfolioLink}>Go to Portfolio<ArrowRightIcon/></Link>
+      <Link to="/portfolio" className={styles.portfolioLink}>Go to Portfolio<ArrowRightIcon /></Link>
     </div>
   );
 };

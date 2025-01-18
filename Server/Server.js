@@ -20,9 +20,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', require('./Routes/authRoutes'));
 app.use('/api/portfolio', require('./Routes/portfolioRoutes'));
 app.use('/api/user', require('./Routes/userRoutes'));
+app.use('/api/watchlist', require('./Routes/watchlistRoutes'));
 
 connectDB();
-startWebSocket(wss); 
+startWebSocket(wss);
 
 app.get('/', (req, res) => {
     res.send('Crypto API is running...');

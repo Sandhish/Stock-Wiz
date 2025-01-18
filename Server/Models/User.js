@@ -20,12 +20,14 @@ const UserSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
-    portfolio: [
-        {
-            stockSymbol: { type: String, required: true },
-            quantity: { type: Number, required: true, min: 1 },
-        },
-    ],
+    portfolio: [{
+        stockSymbol: { type: String, required: true },
+        quantity: { type: Number, required: true, min: 1 },
+    }],
+    watchlist: [{
+        symbol: { type: String, required: true },
+        addedAt: { type: Date, default: Date.now }
+    }]
 }, { timestamps: true });
 
 UserSchema.pre('save', async function (next) {

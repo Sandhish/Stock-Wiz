@@ -2,12 +2,13 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './Context/AuthContext';
 import ProtectedRoute from './Context/ProtectedRoute';
 import Login from './Pages/Login/Login';
-import UserPage from './Pages/UserPage/UserPage';
 import CryptoDetail from './Components/CryptoDetail/CryptoDetail';
 import Signup from './Pages/Login/Signup';
 import Portfolio from './Pages/Portfolio/Portfolio';
 import DepositFunds from './Components/AddingFund/AddingFund';
 import HomePage from './Pages/HomePage/HomePage';
+import Watchlist from './Components/Watchlist/Watchlist';
+import CryptoList from './Components/CryptoList/CryptoList';
 
 const App = () => {
   return (
@@ -21,7 +22,7 @@ const App = () => {
 
           <Route path="/user" element={
             <ProtectedRoute>
-              <UserPage />
+              <CryptoList />
             </ProtectedRoute>
           } />
 
@@ -40,6 +41,12 @@ const App = () => {
           <Route path="/funds" element={
             <ProtectedRoute>
               <DepositFunds />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/watchlist" element={
+            <ProtectedRoute>
+              <Watchlist />
             </ProtectedRoute>
           } />
 

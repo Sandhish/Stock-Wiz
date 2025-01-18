@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { ArrowUpIcon, ArrowDownIcon, SearchIcon, CircleUserRound } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, SearchIcon, CircleUserRound, Star, StarOff } from 'lucide-react';
+import { useWatchlist } from '../../Services/Watchlist';
 import axios from 'axios';
 import classNames from 'classnames';
 import styles from './CryptoList.module.css';
@@ -20,6 +21,7 @@ const CryptoList = () => {
   const [totalCoins, setTotalCoins] = useState(0);
   const [websocketConnected, setWebsocketConnected] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { watchlist = [], addToWatchlist, removeFromWatchlist } = useWatchlist();
 
   const ITEMS_PER_PAGE = 30;
   const API_KEY = import.meta.env.VITE_API_KEY;
@@ -116,7 +118,7 @@ const CryptoList = () => {
 
       const formattedData = response.data.map((crypto) => ({
         id: crypto.code,
-        symbol: crypto.code,
+        symbol: crypto.code.replace(/_/g, ''),
         name: crypto.name,
         price: crypto.rate,
         percentageChange: crypto.delta.day,
@@ -153,13 +155,25 @@ const CryptoList = () => {
       return;
     }
 
-    const localResults = cryptos.filter(crypto =>
-      crypto.name.toLowerCase().includes(query.toLowerCase()) ||
-      crypto.symbol.toLowerCase().includes(query.toLowerCase())
-    );
+    const cleanQuery = query.trim().toLowerCase();
 
-    if (query.trim().length < 2) {
-      setSearchResults(localResults.slice(0, 10));
+    const localResults = cryptos.filter(crypto =>
+      crypto.name.toLowerCase().includes(cleanQuery) ||
+      crypto.symbol.toLowerCase().includes(cleanQuery)
+    ).map(crypto => ({
+      ...crypto,
+      matchScore: (
+        crypto.symbol.toLowerCase() === cleanQuery ? 3 :
+          crypto.symbol.toLowerCase().startsWith(cleanQuery) ? 2 :
+            crypto.name.toLowerCase().startsWith(cleanQuery) ? 1 : 0
+      )
+    }));
+
+    if (cleanQuery.length < 2) {
+      setSearchResults(localResults
+        .sort((a, b) => b.matchScore - a.matchScore)
+        .slice(0, 10)
+      );
       return;
     }
 
@@ -169,9 +183,9 @@ const CryptoList = () => {
         sort: 'rank',
         order: 'ascending',
         offset: 0,
-        limit: 10,
+        limit: 20,
         meta: true,
-        search: query
+        search: cleanQuery
       }, {
         headers: {
           'content-type': 'application/json',
@@ -181,13 +195,18 @@ const CryptoList = () => {
 
       const apiResults = response.data.map(crypto => ({
         id: crypto.code,
-        symbol: crypto.code,
+        symbol: crypto.code.replace(/_/g, ''),
         name: crypto.name,
         price: crypto.rate,
         percentageChange: crypto.delta.day,
         marketCap: crypto.cap,
         volume: crypto.volume,
-        iconUrl: `https://lcw.nyc3.cdn.digitaloceanspaces.com/production/currencies/64/${crypto.code.toLowerCase()}.png`
+        iconUrl: `https://lcw.nyc3.cdn.digitaloceanspaces.com/production/currencies/64/${crypto.code.toLowerCase()}.png`,
+        matchScore: (
+          crypto.code.toLowerCase() === cleanQuery ? 3 :
+            crypto.code.toLowerCase().startsWith(cleanQuery) ? 2 :
+              crypto.name.toLowerCase().startsWith(cleanQuery) ? 1 : 0
+        )
       }));
 
       const combinedResults = [...apiResults];
@@ -197,37 +216,44 @@ const CryptoList = () => {
         }
       });
 
-      const sortedResults = combinedResults.sort((a, b) => {
-        const aNameMatch = a.name.toLowerCase().startsWith(query.toLowerCase());
-        const bNameMatch = b.name.toLowerCase().startsWith(query.toLowerCase());
-        const aSymbolMatch = a.symbol.toLowerCase().startsWith(query.toLowerCase());
-        const bSymbolMatch = b.symbol.toLowerCase().startsWith(query.toLowerCase());
+      const sortedResults = combinedResults
+        .sort((a, b) => {
+          if (b.matchScore !== a.matchScore) {
+            return b.matchScore - a.matchScore;
+          }
+          return (b.marketCap || 0) - (a.marketCap || 0);
+        })
+        .slice(0, 10);
 
-        if (aSymbolMatch && !bSymbolMatch) return -1;
-        if (!aSymbolMatch && bSymbolMatch) return 1;
-        if (aNameMatch && !bNameMatch) return -1;
-        if (!aNameMatch && bNameMatch) return 1;
-        return 0;
-      });
-
-      setSearchResults(sortedResults.slice(0, 10));
+      setSearchResults(sortedResults);
     } catch (error) {
       console.error('Search error:', error);
-      setSearchResults(localResults.slice(0, 10));
+      setSearchResults(
+        localResults
+          .sort((a, b) => b.matchScore - a.matchScore)
+          .slice(0, 10)
+      );
     }
   }, [cryptos, API_KEY]);
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      handleSearch(searchQuery);
+      if (searchQuery) {
+        handleSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+      }
     }, 300);
-
-    if (!searchQuery) {
-      setSearchResults([]);
-    }
 
     return () => clearTimeout(timeoutId);
   }, [searchQuery, handleSearch]);
+
+  useEffect(() => {
+    return () => {
+      setSearchResults([]);
+      setSearchQuery('');
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -260,7 +286,8 @@ const CryptoList = () => {
   }, [page]);
 
   const handleRowClick = (symbol) => {
-    navigate(`/crypto/${symbol}USDT`);
+    const cleanSymbol = symbol.replace(/_/g, '');
+    navigate(`/crypto/${cleanSymbol}USDT`);
   };
 
   const handleNextPage = () => {
@@ -271,6 +298,20 @@ const CryptoList = () => {
     if (page > 1) {
       setPage((prevPage) => prevPage - 1);
     }
+  };
+
+  const handleWatchlistClick = async (e, symbol) => {
+    e.stopPropagation();
+    const isInWatchlist = Array.isArray(watchlist) && watchlist.some(item => item.symbol === symbol);
+    if (isInWatchlist) {
+      await removeFromWatchlist(symbol);
+    } else {
+      await addToWatchlist(symbol);
+    }
+  };
+
+  const isInWatchlist = (symbol) => {
+    return Array.isArray(watchlist) && watchlist.some(item => item.symbol === symbol);
   };
 
   if (loading && page === 1) {
@@ -355,12 +396,14 @@ const CryptoList = () => {
                 {cryptos.map((crypto) => (
                   <tr key={`${crypto.symbol}-${crypto.id}`} className={styles.cryptoRow} onClick={() => handleRowClick(crypto.symbol)} >
                     <td className={styles.assetCell}>
-                      <img src={crypto.iconUrl} alt={crypto.symbol} className={styles.cryptoIcon}
-                        onError={(e) => {
-                          e.target.onerror = null;
-                          e.target.src = '/fallback-crypto-icon.png';
-                        }}
-                      />
+                      <button className={styles.watchlistButton} onClick={(e) => handleWatchlistClick(e, crypto.symbol)} >
+                        {isInWatchlist(crypto.symbol) ? (
+                          <Star className={styles.starIcon} />
+                        ) : (
+                          <StarOff className={styles.starIcon} />
+                        )}
+                      </button>
+                      <img src={crypto.iconUrl} alt={crypto.symbol} className={styles.cryptoIcon} />
                       <span className={styles.cryptoName}>{crypto.name}</span>
                       <span className={styles.cryptoSymbol}>{crypto.symbol}</span>
                     </td>

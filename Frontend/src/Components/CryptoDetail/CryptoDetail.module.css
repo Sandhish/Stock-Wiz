@@ -162,6 +162,31 @@
   transform: translateY(-2px);
 }
 
+.watchlistButton {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease;
+}
+
+.watchlistButton:hover {
+  transform: scale(1.1);
+}
+
+.starIcon {
+  width: 24px;
+  height: 24px;
+  color: #ffd700;
+}
+
+.starIcon:hover {
+  color: #ffed4a;
+}
+
 @media (max-width: 768px) {
   .cryptoHeader {
     flex-direction: column;
