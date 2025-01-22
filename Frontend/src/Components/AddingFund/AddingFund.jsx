@@ -82,8 +82,7 @@ const DepositFunds = ({ onUpdateBalance = () => { }, currentBalance = 0 }) => {
 
                             <div className={styles.presetAmounts}>
                                 {presetAmounts.map((preset) => (
-                                    <button key={preset} onClick={() => setAmount(preset.toString())}
-                                        className={styles.presetButton} >
+                                    <button key={preset} onClick={() => setAmount(preset.toString())} className={styles.presetButton} >
                                         ${preset}
                                     </button>
                                 ))}

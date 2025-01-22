@@ -6,7 +6,6 @@ import classNames from 'classnames';
 import styles from './CryptoList.module.css';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../SideBar/SideBar';
-import useWebSocketConnection from './wshandler';
 
 const CryptoList = () => {
   const navigate = useNavigate();
@@ -26,43 +25,28 @@ const CryptoList = () => {
 
   const ITEMS_PER_PAGE = 30;
   const API_KEY = import.meta.env.VITE_API_KEY;
+  const WS_URL = import.meta.env.VITE_WS_API;
 
   const cryptosRef = useRef(cryptos);
   useEffect(() => {
     cryptosRef.current = cryptos;
   }, [cryptos]);
 
-  const pendingSubscriptions = useRef([]);
-
   const connectWebSocket = useCallback(() => {
     if (ws.current?.readyState === WebSocket.OPEN) return;
 
-    const wsUrl = import.meta.env.VITE_WS_API;
-    ws.current = new WebSocket(wsUrl);
+    ws.current = new WebSocket(WS_URL);
 
     ws.current.onopen = () => {
       console.log('WebSocket Connected');
       setWebsocketConnected(true);
 
-      // Process any pending subscriptions
-      while (pendingSubscriptions.current.length > 0) {
-        const symbol = pendingSubscriptions.current.shift();
-        try {
-          if (ws.current?.readyState === WebSocket.OPEN) {
-            ws.current.send(JSON.stringify({
-              type: 'subscribe',
-              symbol: `${symbol}USDT`
-            }));
-          } else {
-            // If connection isn't open, add back to pending
-            pendingSubscriptions.current.push(symbol);
-            break;
-          }
-        } catch (error) {
-          console.error(`Failed to subscribe to ${symbol}:`, error);
-          pendingSubscriptions.current.push(symbol);
-        }
-      }
+      cryptosRef.current.forEach(crypto => {
+        ws.current.send(JSON.stringify({
+          type: 'subscribe',
+          symbol: `${crypto.symbol}USDT`
+        }));
+      });
     };
 
     ws.current.onmessage = (event) => {
@@ -83,52 +67,16 @@ const CryptoList = () => {
       }
     };
 
-    ws.current.onclose = (event) => {
-      console.log('WebSocket Disconnected', event.code, event.reason);
+    ws.current.onclose = () => {
+      console.log('WebSocket Disconnected');
       setWebsocketConnected(false);
-
-      // Save current subscriptions for reconnect
-      if (cryptosRef.current) {
-        pendingSubscriptions.current = cryptosRef.current.map(crypto => crypto.symbol);
-      }
-
-      const backoffDelay = Math.min(1000 * Math.pow(2, ws.current?.retryCount || 0), 30000);
-      ws.current.retryCount = (ws.current?.retryCount || 0) + 1;
-
-      setTimeout(connectWebSocket, backoffDelay);
+      setTimeout(connectWebSocket, 5000);
     };
 
     ws.current.onerror = (error) => {
       console.error('WebSocket Error:', error);
-      if (ws.current?.readyState === WebSocket.OPEN) {
-        ws.current?.close();
-      }
+      ws.current?.close();
     };
-
-    return () => {
-      if (ws.current) {
-        ws.current.close();
-        ws.current = null;
-      }
-    };
-  }, []);
-
-  const subscribeToCryptos = useCallback((cryptosList) => {
-    cryptosList.forEach(crypto => {
-      if (ws.current?.readyState === WebSocket.OPEN) {
-        try {
-          ws.current.send(JSON.stringify({
-            type: 'subscribe',
-            symbol: `${crypto.symbol}USDT`
-          }));
-        } catch (error) {
-          console.error(`Failed to subscribe to ${crypto.symbol}:`, error);
-          pendingSubscriptions.current.push(crypto.symbol);
-        }
-      } else {
-        pendingSubscriptions.current.push(crypto.symbol);
-      }
-    });
   }, []);
 
   const fetchCryptos = async () => {
@@ -192,9 +140,7 @@ const CryptoList = () => {
           }));
         });
       }
-      if (websocketConnected) {
-        subscribeToCryptos(formattedData);
-      }
+
       setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -202,21 +148,6 @@ const CryptoList = () => {
       setLoading(false);
     }
   };
-  const handlePriceUpdate = useCallback((data) => {
-    setCryptos(prevCryptos =>
-      prevCryptos.map(crypto =>
-        crypto.symbol === data.symbol.replace('USDT', '') ? {
-          ...crypto,
-          price: data.price,
-          percentageChange: data.percentageChange,
-          volume: data.volume
-        } : crypto
-      )
-    );
-  }, []);
-
-  const isConnected = useWebSocketConnection(cryptos, handlePriceUpdate);
-  console.log('isConnected:', isConnected);
 
   const handleSearch = useCallback(async (query) => {
     if (!query.trim()) {
@@ -407,7 +338,7 @@ const CryptoList = () => {
       {!error && (
         <>
           <div className={styles.headerContainer}>
-            <h2 className={styles.cryptoListHeading}>Crypto Wiz</h2>
+            <h2 className={styles.cryptoListHeading}><i>Crypto Wiz</i></h2>
             <div className={styles.searchBarWrapper}>
               <div className={styles.searchBarContainer}>
                 <input type="text" placeholder="Search by name or symbol..." value={searchQuery}

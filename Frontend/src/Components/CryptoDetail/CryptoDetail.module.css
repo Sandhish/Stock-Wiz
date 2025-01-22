@@ -188,16 +188,80 @@
 }
 
 @media (max-width: 768px) {
+  .cryptoDetailContainer {
+    padding: 1rem;
+  }
+
   .cryptoHeader {
     flex-direction: column;
     align-items: flex-start;
+    gap: 1rem;
   }
 
-  .cryptoPriceContainer {
-    margin-top: 1rem;
+  .cryptoTitle {
+    font-size: 1.5rem;
+  }
+
+  .cryptoPrice {
+    font-size: 1.4rem;
+  }
+
+  .bottomContainer {
+    flex-direction: column;
+    margin-left: 0;
+    margin-top: 2rem;
+    gap: 1rem;
   }
 
   .statisticsGrid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .statCard {
+    width: 100%;
+  }
+
+  .timeframeButtons {
+    margin-top: 2rem;
+    padding: 0 0.5rem;
+  }
+
+  .timeframeButton {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+
+  .tradingFormContainer {
+    width: 100%;
+  }
+
+  .portfolioLink {
+    margin-top: 1rem;
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .cryptoDetailContainer {
+    padding: 0.75rem;
+  }
+
+  .timeframeButtons {
+    gap: 0.25rem;
+  }
+
+  .timeframeButton {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.7rem;
+  }
+
+  .statValue {
+    font-size: 1rem;
+  }
+
+  .statLabel {
+    font-size: 0.75rem;
   }
 }
