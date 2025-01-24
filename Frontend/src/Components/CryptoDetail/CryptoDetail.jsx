@@ -44,7 +44,7 @@ const CryptoDetail = () => {
     volume: 0
   };
 
-  const { cryptoData, wsConnected } = useWebSocketConnection(symbol, initialData);
+  const { cryptoData, wsConnected, historicalData } = useWebSocketConnection(symbol, initialData);
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
 
   const fetchHistoricalData = async () => {
@@ -88,23 +88,13 @@ const CryptoDetail = () => {
   };
 
   useEffect(() => {
-    fetchHistoricalData();
-  }, [symbol, timeframe]);
-
-  useEffect(() => {
-    if (['15m', '30m', '1h'].includes(timeframe) && cryptoData.price) {
-      setPriceHistory(prev => {
-        const newPrice = {
-          date: new Date().getTime(),
-          price: cryptoData.price,
-          high: cryptoData.high,
-          low: cryptoData.low,
-          volume: cryptoData.volume
-        };
-        return [...prev.slice(1), newPrice];
-      });
+    if (historicalData[timeframe]) {
+      setPriceHistory(historicalData[timeframe]);
+      setLoading(false);
+    } else {
+      fetchHistoricalData();
     }
-  }, [cryptoData, timeframe]);
+  }, [symbol, timeframe, historicalData]);
 
   const handleWatchlistClick = async () => {
     const isInWatchlist = watchlist.some(item => item.symbol === baseSymbol);
