@@ -1,11 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import PriceChart from '../Chart/PriceChart';
-import styles from './CryptoDetail.module.css';
-import TradingForm from '../TradingForm/TradingForm';
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon, Star, StarOff } from 'lucide-react';
+
+import PriceChart from '../Chart/PriceChart';
+import TradingForm from '../TradingForm/TradingForm';
+import useWebSocketConnection from '../../Context/useWebSocketConnection';
 import { useWatchlist } from '../../Services/Watchlist';
+import styles from './CryptoDetail.module.css';
 
 const TimeFrames = {
   MIN_15: '15m',
@@ -29,44 +31,26 @@ const formatPrice = (price) => {
 const CryptoDetail = () => {
   const { symbol } = useParams();
   const baseSymbol = symbol.replace('USDT', '');
-  const [cryptoData, setCryptoData] = useState({
+  const [timeframe, setTimeframe] = useState(TimeFrames.HOUR_1);
+  const [priceHistory, setPriceHistory] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const initialData = {
     price: 0,
     percentageChange: 0,
     high: 0,
     low: 0,
     volume: 0
-  });
-  const [priceHistory, setPriceHistory] = useState([]);
-  const [timeframe, setTimeframe] = useState(TimeFrames.HOUR_1);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [wsConnected, setWsConnected] = useState(false);
+  };
+
+  const { cryptoData, wsConnected } = useWebSocketConnection(symbol, initialData);
   const { watchlist, addToWatchlist, removeFromWatchlist } = useWatchlist();
-  const WS_API_KEY = import.meta.env.VITE_WS_API;
 
-  const fetchInitialData = useCallback(async () => {
-    try {
-      const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
-      if (!response.ok) throw new Error('Failed to fetch initial data');
-      const data = await response.json();
-
-      setCryptoData({
-        price: parseFloat(data.lastPrice),
-        percentageChange: parseFloat(data.priceChangePercent),
-        high: parseFloat(data.highPrice),
-        low: parseFloat(data.lowPrice),
-        volume: parseFloat(data.volume)
-      });
-    } catch (error) {
-      console.error('Error fetching initial data:', error);
-    }
-  }, [symbol]);
-
-  const fetchHistoricalData = useCallback(async () => {
+  const fetchHistoricalData = async () => {
     try {
       setLoading(true);
-      let interval;
-      let limit;
+      let interval, limit;
 
       switch (timeframe) {
         case '15m': interval = '15m'; limit = 96; break;
@@ -101,83 +85,29 @@ const CryptoDetail = () => {
       setError(error.message);
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchHistoricalData();
   }, [symbol, timeframe]);
 
   useEffect(() => {
-    let ws = null;
-    let reconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
-
-    const connectWebSocket = () => {
-      if (reconnectAttempts >= maxReconnectAttempts) {
-        console.error('Max reconnection attempts reached');
-        return;
-      }
-
-      ws = new WebSocket(WS_API_KEY);
-
-      ws.onopen = () => {
-        console.log('WebSocket connected');
-        setWsConnected(true);
-        reconnectAttempts = 0;
-        ws.send(JSON.stringify({ type: 'subscribe', symbol }));
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'price_update' && data.symbol === symbol) {
-            setCryptoData({
-              price: data.price,
-              percentageChange: data.percentageChange,
-              high: data.high,
-              low: data.low,
-              volume: data.volume
-            });
-
-            if (['15m', '30m', '1h'].includes(timeframe)) {
-              setPriceHistory(prev => {
-                const newPrice = {
-                  date: new Date().getTime(),
-                  price: data.price,
-                  high: data.high,
-                  low: data.low,
-                  volume: data.volume
-                };
-                return [...prev.slice(1), newPrice];
-              });
-            }
-          }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      ws.onclose = () => {
-        console.log('WebSocket disconnected');
-        setWsConnected(false);
-        reconnectAttempts++;
-        setTimeout(connectWebSocket, 3000);
-      };
-
-      ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-      };
-    };
-
-    fetchInitialData();
-    fetchHistoricalData();
-    connectWebSocket();
-
-    return () => {
-      if (ws) {
-        ws.close();
-      }
-    };
-  }, [symbol, timeframe, fetchHistoricalData, fetchInitialData]);
+    if (['15m', '30m', '1h'].includes(timeframe) && cryptoData.price) {
+      setPriceHistory(prev => {
+        const newPrice = {
+          date: new Date().getTime(),
+          price: cryptoData.price,
+          high: cryptoData.high,
+          low: cryptoData.low,
+          volume: cryptoData.volume
+        };
+        return [...prev.slice(1), newPrice];
+      });
+    }
+  }, [cryptoData, timeframe]);
 
   const handleWatchlistClick = async () => {
-    const isInWatchlist = Array.isArray(watchlist) && watchlist.some(item => item.symbol === baseSymbol);
+    const isInWatchlist = watchlist.some(item => item.symbol === baseSymbol);
     if (isInWatchlist) {
       await removeFromWatchlist(baseSymbol);
     } else {
@@ -186,7 +116,7 @@ const CryptoDetail = () => {
   };
 
   const isInWatchlist = () => {
-    return Array.isArray(watchlist) && watchlist.some(item => item.symbol === baseSymbol);
+    return watchlist.some(item => item.symbol === baseSymbol);
   };
 
   if (loading && !cryptoData.price) return <div className={styles.loading}>Loading...</div>;
@@ -197,13 +127,12 @@ const CryptoDetail = () => {
       <div className={styles.cryptoHeader}>
         <div className={styles.titleAndWatchlist}>
           <h2 className={styles.cryptoTitle}>{baseSymbol}</h2>
-          <button className={styles.watchlistButton} onClick={handleWatchlistClick}
-            title={isInWatchlist() ? "Remove from watchlist" : "Add to watchlist"}>
-            {isInWatchlist() ? (
-              <Star className={styles.starIcon} />
-            ) : (
-              <StarOff className={styles.starIcon} />
-            )}
+          <button
+            className={styles.watchlistButton}
+            onClick={handleWatchlistClick}
+            title={isInWatchlist() ? "Remove from watchlist" : "Add to watchlist"}
+          >
+            {isInWatchlist() ? <Star className={styles.starIcon} /> : <StarOff className={styles.starIcon} />}
           </button>
         </div>
         <div className={styles.cryptoPriceContainer}>
@@ -218,42 +147,49 @@ const CryptoDetail = () => {
 
       <div className={styles.timeframeButtons}>
         {Object.entries(TimeFrames).map(([key, value]) => (
-          <button key={key} onClick={() => setTimeframe(value)}
-            className={`${styles.timeframeButton} ${timeframe === value ? styles.active : ''}`}>
+          <button
+            key={key}
+            onClick={() => setTimeframe(value)}
+            className={`${styles.timeframeButton} ${timeframe === value ? styles.active : ''}`}
+          >
             {value}
           </button>
         ))}
       </div>
 
-      <PriceChart className={styles.chartContainer} priceHistory={priceHistory} timeframe={timeframe} symbol={symbol} />
+      <PriceChart
+        className={styles.chartContainer}
+        priceHistory={priceHistory}
+        timeframe={timeframe}
+        symbol={symbol}
+      />
 
       <div className={styles.bottomContainer}>
         <div className={styles.statisticsGrid}>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>High</span>
-            <p className={styles.statValue}>${formatPrice(cryptoData.high)}</p>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>Low</span>
-            <p className={styles.statValue}>${formatPrice(cryptoData.low)}</p>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>24h Change</span>
-            <p className={`${styles.statValue} ${cryptoData.percentageChange >= 0 ? styles.textGreen : styles.textRed}`}>
-              {cryptoData.percentageChange.toFixed(2)}%
-            </p>
-          </div>
-          <div className={styles.statCard}>
-            <span className={styles.statLabel}>Volume</span>
-            <p className={styles.statValue}>${cryptoData.volume.toLocaleString()}</p>
-          </div>
+          {[
+            { label: 'High', value: cryptoData.high, format: true },
+            { label: 'Low', value: cryptoData.low, format: true },
+            { label: '24h Change', value: cryptoData.percentageChange, format: false, percentage: true },
+            { label: 'Volume', value: cryptoData.volume, format: 'localeString' }
+          ].map(({ label, value, format, percentage }) => (
+            <div key={label} className={styles.statCard}>
+              <span className={styles.statLabel}>{label}</span>
+              <p className={`${styles.statValue} ${percentage && (value >= 0 ? styles.textGreen : styles.textRed)}`}>
+                {format === 'localeString' ? value.toLocaleString() :
+                  format ? `$${formatPrice(value)}` :
+                    percentage ? `${value.toFixed(2)}%` : value}
+              </p>
+            </div>
+          ))}
         </div>
 
         <div className={styles.tradingFormContainer}>
           <TradingForm symbol={symbol} currentPrice={cryptoData.price} />
         </div>
       </div>
-      <Link to="/portfolio" className={styles.portfolioLink}>Go to Portfolio<ArrowRightIcon /></Link>
+      <Link to="/portfolio" className={styles.portfolioLink}>
+        Go to Portfolio<ArrowRightIcon />
+      </Link>
     </div>
   );
 };
