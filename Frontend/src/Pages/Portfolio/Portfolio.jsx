@@ -99,11 +99,19 @@ const Portfolio = () => {
   }, [portfolio]);
 
   const getHoldingInitialPrice = (symbol) => {
-    const firstBuyTx = transactions
+    const buyTransactions = transactions
       .filter((tx) => tx.symbol === symbol && tx.type === 'BUY')
-      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))[0];
+      .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-    return firstBuyTx ? firstBuyTx.price : 0;
+    if (buyTransactions.length > 0) {
+      const totalQuantity = buyTransactions.reduce((sum, tx) => sum + tx.quantity, 0);
+      const weightedAvgPrice = buyTransactions.reduce((sum, tx) => 
+        sum + (tx.price * tx.quantity), 0) / totalQuantity;
+      
+      return weightedAvgPrice;
+    }
+
+    return 0;
   };
 
   if (loading) return <div className={styles.loading}>Loading...</div>;
@@ -124,10 +132,16 @@ const Portfolio = () => {
       </div>
 
       <div className={styles.tabs}>
-        <button className={`${styles.tab} ${activeTab === 'holdings' ? styles.active : ''}`} onClick={() => setActiveTab('holdings')} >
+        <button 
+          className={`${styles.tab} ${activeTab === 'holdings' ? styles.active : ''}`} 
+          onClick={() => setActiveTab('holdings')}
+        >
           Holdings
         </button>
-        <button className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`} onClick={() => setActiveTab('history')} >
+        <button 
+          className={`${styles.tab} ${activeTab === 'history' ? styles.active : ''}`} 
+          onClick={() => setActiveTab('history')}
+        >
           Transaction History
         </button>
       </div>
@@ -142,27 +156,31 @@ const Portfolio = () => {
               const initialPrice = getHoldingInitialPrice(holding.stockSymbol);
               const currentPrice = priceUpdate.currentPrice || initialPrice;
               const totalValue = currentPrice * holding.quantity;
-              const percentageChange =
-                ((currentPrice - initialPrice) / initialPrice) * 100;
+              
+              const percentageChange = initialPrice > 0
+                ? ((currentPrice - initialPrice) / initialPrice) * 100
+                : 0;
 
               return (
-                <Link to={`/crypto/${holding.stockSymbol}`} key={holding.stockSymbol} className={styles.holdingCard} >
+                <Link 
+                  to={`/crypto/${holding.stockSymbol}`} 
+                  key={holding.stockSymbol} 
+                  className={styles.holdingCard}
+                >
                   <div className={styles.holdingInfo}>
                     <h3>{holding.stockSymbol}</h3>
                     <div className={styles.holdingDetails}>
                       <p>{holding.quantity} units</p>
                       <p className={styles.holdingValue}>
-                        $
-                        {totalValue.toLocaleString(undefined, {
+                        ${totalValue.toLocaleString(undefined, {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
                       </p>
                       <p
-                        className={`${styles.percentChange} ${percentageChange >= 0
-                          ? styles.positive
-                          : styles.negative
-                          }`}
+                        className={`${styles.percentChange} ${
+                          percentageChange >= 0 ? styles.positive : styles.negative
+                        }`}
                       >
                         {percentageChange >= 0 ? '+' : ''}
                         {percentageChange.toFixed(2)}%
@@ -182,7 +200,9 @@ const Portfolio = () => {
             transactions.map((tx) => (
               <div key={tx._id} className={styles.transaction}>
                 <div className={styles.txInfo}>
-                  <span className={`${styles.txType} ${styles[tx.type.toLowerCase()]}`} >
+                  <span 
+                    className={`${styles.txType} ${styles[tx.type.toLowerCase()]}`}
+                  >
                     {tx.type}
                   </span>
                   <span className={styles.txSymbol}>{tx.symbol}</span>

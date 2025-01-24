@@ -60,6 +60,9 @@ const CryptoDetail = () => {
         case '1d': interval = '1d'; limit = 30; break;
         case '1w': interval = '1w'; limit = 52; break;
         case '1M': interval = '1M'; limit = 12; break;
+        case '3M': interval = '3M'; limit = 12; break;
+        case '1Y': interval = '1Y'; limit = 12; break;
+        case 'ALL': interval = '1d'; limit = 30; break;
         default: interval = '1h'; limit = 96;
       }
 

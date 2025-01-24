@@ -26,8 +26,28 @@ const useWebSocketConnection = (symbol, initialData) => {
 
     const fetchHistoricalDataForInterval = useCallback(async (interval, limit) => {
         try {
+            let apiInterval = interval;
+            let apiLimit = limit;
+
+            switch (interval) {
+                case '3M':
+                    apiInterval = '1w';
+                    apiLimit = 12;
+                    break;
+                case '1Y':
+                    apiInterval = '1M';
+                    apiLimit = 12;
+                    break;
+                case 'ALL':
+                    apiInterval = '1M';
+                    apiLimit = 24;
+                    break;
+                default:
+                    break;
+            }
+
             const response = await fetch(
-                `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+                `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${apiInterval}&limit=${apiLimit}`
             );
 
             if (!response.ok) throw new Error('Failed to fetch historical data');
@@ -59,7 +79,6 @@ const useWebSocketConnection = (symbol, initialData) => {
                 volume: newData.volume
             };
 
-            // Maintain a fixed-length array for each interval
             const updatedIntervalData = [...intervalData.slice(1), newEntry];
             return {
                 ...prev,
@@ -73,9 +92,8 @@ const useWebSocketConnection = (symbol, initialData) => {
         let fallbackInterval = null;
 
         const connectWebSocket = async () => {
-            // Preload historical data for all intervals
-            const intervals = ['15m', '30m', '1h', '4h', '1d', '1w', '1M'];
-            const limits = [96, 96, 96, 96, 30, 52, 12];
+            const intervals = ['15m', '30m', '1h', '4h', '1d', '1w', '1M', '3M', '1Y', 'ALL'];
+            const limits = [96, 96, 96, 96, 30, 52, 12, 12, 12, 24];
 
             const historicalDataPromises = intervals.map((interval, index) =>
                 fetchHistoricalDataForInterval(interval, limits[index])
@@ -111,7 +129,6 @@ const useWebSocketConnection = (symbol, initialData) => {
 
                         setCryptoData(newData);
 
-                        // Update historical data for all intervals
                         ['15m', '30m', '1h', '4h', '1d', '1w', '1M'].forEach(interval => {
                             updateHistoricalData(newData, interval);
                         });
@@ -128,7 +145,6 @@ const useWebSocketConnection = (symbol, initialData) => {
                     if (latestData) {
                         setCryptoData(latestData);
                         
-                        // Update historical data for all intervals on fallback
                         ['15m', '30m', '1h', '4h', '1d', '1w', '1M'].forEach(interval => {
                             updateHistoricalData(latestData, interval);
                         });
@@ -142,7 +158,6 @@ const useWebSocketConnection = (symbol, initialData) => {
                 if (latestData) {
                     setCryptoData(latestData);
                     
-                    // Update historical data for all intervals on error
                     ['15m', '30m', '1h', '4h', '1d', '1w', '1M'].forEach(interval => {
                         updateHistoricalData(latestData, interval);
                     });
