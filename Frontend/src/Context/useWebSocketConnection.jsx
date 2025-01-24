@@ -71,7 +71,7 @@ const useWebSocketConnection = (symbol, initialData) => {
                     if (latestData) {
                         setCryptoData(latestData);
                     }
-                }, 10000); // Poll every 10 seconds
+                }, 3000); // Poll every 10 seconds
             };
 
             ws.onerror = async (error) => {
