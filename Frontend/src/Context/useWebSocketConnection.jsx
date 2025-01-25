@@ -8,7 +8,10 @@ const useWebSocketConnection = (symbol, initialData) => {
     const fetchLatestData = useCallback(async () => {
         try {
             const response = await fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`);
-            if (!response.ok) throw new Error('Failed to fetch data');
+            if (!response.ok) {
+                console.error('Network response was not ok');
+                return initialData;
+            }
             const data = await response.json();
 
             return {
@@ -20,7 +23,7 @@ const useWebSocketConnection = (symbol, initialData) => {
             };
         } catch (error) {
             console.error('Fallback data fetch error:', error);
-            return null;
+            return initialData;
         }
     }, [symbol]);
 
@@ -107,8 +110,9 @@ const useWebSocketConnection = (symbol, initialData) => {
 
             setHistoricalData(historicalDataMap);
 
-            ws = new WebSocket(import.meta.env.VITE_WS_API);
-
+            const WS_URL = import.meta.env.VITE_WS_API || `wss://${window.location.hostname}/ws`;
+            ws = new WebSocket(WS_URL);
+            
             ws.onopen = () => {
                 setWsConnected(true);
                 ws.send(JSON.stringify({ type: 'subscribe', symbol }));
@@ -144,7 +148,7 @@ const useWebSocketConnection = (symbol, initialData) => {
                     const latestData = await fetchLatestData();
                     if (latestData) {
                         setCryptoData(latestData);
-                        
+
                         ['15m', '30m', '1h', '4h', '1d', '1w', '1M'].forEach(interval => {
                             updateHistoricalData(latestData, interval);
                         });
@@ -157,7 +161,7 @@ const useWebSocketConnection = (symbol, initialData) => {
                 const latestData = await fetchLatestData();
                 if (latestData) {
                     setCryptoData(latestData);
-                    
+
                     ['15m', '30m', '1h', '4h', '1d', '1w', '1M'].forEach(interval => {
                         updateHistoricalData(latestData, interval);
                     });
